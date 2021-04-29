@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.msoygen.flappybirdclone;
 
 import static com.msoygen.flappybirdclone.App.screenWidth;
@@ -18,6 +13,7 @@ import java.util.List;
 public class App {
 
     enum GameStates {
+        MENU,
         PLAYING,
         GAME_OVER
     }
@@ -28,74 +24,104 @@ public class App {
     static final int screenHeight = 600;
 
     public static void main(String args[]) {
-        GameStates gameState = GameStates.PLAYING;
+        GameStates gameState = GameStates.MENU;
 
         InitWindow(screenWidth, screenHeight, "flappy bird clone");
+        InitAudioDevice();
 
         SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
         //--------------------------------------------------------------------------------------
 
-        Texture2D background = LoadTexture("Resources/background.png");
-        Texture2D pipeTop = LoadTexture("Resources/pipeTop.png");
-        Texture2D pipeBottom = LoadTexture("Resources/pipeBottom.png");
-        float scrolling = 0.0f;
-        float pipeScrolling = 0.0f;
+        Sound fxButton = LoadSound("Resources/buttonClick.wav");
+        Texture2D startButtonTexture = LoadTexture("Resources/startButton.png");
+        Texture2D backgroundTexture = LoadTexture("Resources/background.png");
+        Texture2D pipeTopTexture = LoadTexture("Resources/pipeTop.png");
+        Texture2D pipeBottomTexture = LoadTexture("Resources/pipeBottom.png");
+        Texture2D floorTexture = LoadTexture("Resources/floor.png");
 
         List<Pipe> pipeBottomList = new ArrayList<>();
         List<Pipe> pipeTopList = new ArrayList<>();
         List<Background> backgroundList = new ArrayList<>();
+        List<Floor> floorList = new ArrayList<>();
 
         List<Texture2D> playerSprites = new ArrayList<>();
 
         playerSprites.add(LoadTexture("Resources/bird1.png"));
         playerSprites.add(LoadTexture("Resources/bird2.png"));
 
-        Player player = new Player(playerSprites, new Vector2(100, screenHeight / 2 - 200), 1.0f, 5, 2, 0.1f, WHITE);
+        Player player = new Player(playerSprites, new Vector2(100, screenHeight / 2 - 200), 0f, 5, 2, 0.1f, WHITE);
 
+        Rectangle sourceRect = new Rectangle(0, 0, pipeBottomTexture.width(), pipeBottomTexture.height() / 2);
         for (int i = 0; i < 5; i++) {
-            pipeBottomList.add(new Pipe(pipeBottom, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottom.height() / 2)), 1.0f, 3.0f, 1.0f, WHITE));
+            pipeBottomList.add(new Pipe(pipeBottomTexture, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottomTexture.height() / 2) - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE, sourceRect));
         }
         for (int i = 0; i < 5; i++) {
-            pipeTopList.add(new Pipe(pipeTop, new Vector2((screenWidth / 5) * i, -(pipeTop.height() / 2)), 1.0f, 3.0f, 1.0f, WHITE));
+            pipeTopList.add(new Pipe(pipeTopTexture, new Vector2((screenWidth / 5) * i, -(pipeTopTexture.height() / 2)), 0f, 3.0f, 1.0f, WHITE));
         }
 
         for (int i = 0; i < 4; i++) {
-            backgroundList.add(new Background(background, new Vector2(i * background.width(), 0), 1.0f, 3.0f, 1.2f, WHITE));
+            backgroundList.add(new Background(backgroundTexture, new Vector2(i * backgroundTexture.width(), 0), 0f, 3.0f, 1.2f, WHITE));
         }
+
+        for (int i = 0; i < 4; i++) {
+            floorList.add(new Floor(LoadTexture("Resources/floor.png"), new Vector2(floorTexture.width() * i - 2, screenHeight - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE));
+        }
+
+        Button playButton = new Button(startButtonTexture, new Vector2(screenWidth / 2 - startButtonTexture.width() / 2, screenHeight / 2 - startButtonTexture.height() / 2), 0f, 1.0f, WHITE, fxButton);
 
         // Main game loop
         while (!WindowShouldClose()) // Detect window close button or ESC key
         {
             // Update
-            if (gameState.equals(GameStates.PLAYING)) {
-                backgroundList.forEach(b -> {
-                    b.Update();
-                });
-
-                pipeBottomList.forEach(p -> {
-                    p.Update();
-                });
-                pipeTopList.forEach(p -> {
-                    p.Update();
-                });
-
-                player.Update();
-
-                for (Pipe p : pipeBottomList) {
-                    if (player.destRect.x() + player.destRect.width() / 2 - 10 > p.destRect.x() 
-                            && player.destRect.x() + player.destRect.width() / 2 - 10 < p.destRect.x() + p.destRect.width() 
-                            && player.destRect.y() + player.destRect.height() / 2 - 10 > p.destRect.y()) {
-                        gameState = GameStates.GAME_OVER;
+            switch (gameState) {
+                case MENU:
+                    playButton.Update();
+                    if (playButton.action == true) {
+                        gameState = GameStates.PLAYING;
+                        playButton.action = false;
                     }
-                }
-
-                for (Pipe p : pipeTopList) {
-                    if (player.destRect.x() > p.destRect.x() 
-                            && player.destRect.x() < p.destRect.x() + p.destRect.width() 
-                            && player.destRect.y() < p.destRect.y() + p.destRect.height()) {
-                        gameState = GameStates.GAME_OVER;
+                    break;
+                case PLAYING:
+                    backgroundList.forEach(b -> {
+                        b.Update();
+                    });
+                    floorList.forEach(f -> {
+                        f.Update();
+                    });
+                    pipeBottomList.forEach(p -> {
+                        p.Update();
+                    });
+                    pipeTopList.forEach(p -> {
+                        p.Update();
+                    });
+                    player.Update();
+                    for (Pipe p : pipeBottomList) {
+                        if (player.destRect.x() + player.destRect.width() / 2 - 10 > p.destRect.x()
+                                && player.destRect.x() + player.destRect.width() / 2 - 10 < p.destRect.x() + p.destRect.width()
+                                && player.destRect.y() + player.destRect.height() / 2 - 10 > p.destRect.y()) {
+                            gameState = GameStates.GAME_OVER;
+                        }
                     }
-                }
+                    for (Pipe p : pipeTopList) {
+                        if (player.destRect.x() + player.destRect.width() / 2 - 10 > p.destRect.x()
+                                && player.destRect.x() < p.destRect.x() + p.destRect.width()
+                                && player.destRect.y() - player.destRect.height() / 2 + 5 < p.destRect.y() + p.destRect.height()) {
+                            gameState = GameStates.GAME_OVER;
+                        }
+                    }
+                    break;
+                case GAME_OVER:
+                    playButton.Update();
+                    if (playButton.action == true) {
+                        player.destRect.x(100);
+                        player.destRect.y(screenHeight / 2 - 100);
+
+                        gameState = GameStates.MENU;
+                        playButton.action = false;
+                    }
+                    break;
+                default:
+                    break;
             }
             // Draw
             //----------------------------------------------------------------------------------
@@ -103,25 +129,60 @@ public class App {
 
             ClearBackground(RAYWHITE);
 
-            backgroundList.forEach(b -> {
-                b.Render();
-            });
-
-            pipeBottomList.forEach(p -> {
-                p.Render();
-            });
-            pipeTopList.forEach(p -> {
-                p.Render();
-            });
-
-            player.Render();
-
+            switch (gameState) {
+                case MENU:
+                    backgroundList.forEach(b -> {
+                        b.Render();
+                    });
+                    floorList.forEach(f -> {
+                        f.Render();
+                    });
+                    playButton.Render();
+                    break;
+                case PLAYING:
+                    backgroundList.forEach(b -> {
+                        b.Render();
+                    });
+                    floorList.forEach(f -> {
+                        f.Render();
+                    });
+                    pipeBottomList.forEach(p -> {
+                        p.Render();
+                    });
+                    pipeTopList.forEach(p -> {
+                        p.Render();
+                    });
+                    player.Render();
+                    break;
+                case GAME_OVER:
+                    backgroundList.forEach(b -> {
+                        b.Render();
+                    });
+                    floorList.forEach(f -> {
+                        f.Render();
+                    });
+                    playButton.Render();
+                    pipeBottomList.forEach(p -> {
+                        p.Render();
+                    });
+                    pipeTopList.forEach(p -> {
+                        p.Render();
+                    });
+                    player.Render();
+                    break;
+                default:
+                    break;
+            }
             EndDrawing();
             //----------------------------------------------------------------------------------
         }
 
         backgroundList.forEach(b -> {
             b.Unload();
+        });
+
+        floorList.forEach(f -> {
+            f.Unload();
         });
 
         pipeBottomList.forEach(p -> {
@@ -132,6 +193,8 @@ public class App {
         });
 
         player.Unload();
+
+        playButton.Unload();
         // De-Initialization
         //--------------------------------------------------------------------------------------
         CloseWindow();        // Close window and OpenGL context
@@ -172,6 +235,17 @@ class Pipe extends GameObject {
 
         sourceRect = new Rectangle(0, 0, width, height);
         destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
+    }
+
+    public Pipe(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint, Rectangle sourceRect) {
+        this.texture = texture;
+        this.rotation = rotation;
+        this.speed = speed;
+        this.scale = scale;
+        this.tint = tint;
+
+        this.sourceRect = sourceRect;
+        destRect = new Rectangle(position.x(), position.y(), sourceRect.width() * scale, sourceRect.height() * scale);
     }
 
     @Override
@@ -300,4 +374,115 @@ class Player extends GameObject {
             UnloadTexture(t);
         });
     }
+}
+
+class Floor extends GameObject {
+
+    float speed;
+    Vector2 originalPosition;
+
+    public Floor(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint) {
+        this.texture = texture;
+        this.rotation = rotation;
+        this.speed = speed;
+        this.scale = scale;
+        this.tint = tint;
+
+        this.originalPosition = new Vector2(position.x(), position.y());
+
+        float width = texture.width();
+        float height = texture.height();
+
+        sourceRect = new Rectangle(0, 0, width, height);
+        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
+    }
+
+    @Override
+    public void Update() {
+        destRect.x(destRect.x() - speed);
+        if (destRect.x() - originalPosition.x() <= -texture.width()) {
+            destRect.x(originalPosition.x());
+            destRect.y(originalPosition.y());
+        }
+    }
+
+    @Override
+    public void Render() {
+        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
+    }
+
+    @Override
+    public void Unload() {
+        UnloadTexture(texture);
+    }
+
+}
+
+class Button extends GameObject {
+
+    int state = 0; // 0 - normal, 1 - mouse over, 2 - pressed
+    boolean action = false;
+    Sound fx;
+
+    public Button(Texture2D texture, Vector2 position, float rotation, float scale, Color tint, Sound fx) {
+        this.texture = texture;
+        this.rotation = rotation;
+        this.scale = scale;
+        this.tint = tint;
+        this.fx = fx;
+
+        float width = texture.width();
+        float height = texture.height();
+
+        sourceRect = new Rectangle(0, 0, width, height);
+        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
+    }
+
+    public Button(Texture2D texture, Vector2 position, float rotation, float scale, Color tint, Sound fx, Rectangle sourceRect) {
+        this.texture = texture;
+        this.rotation = rotation;
+        this.scale = scale;
+        this.tint = tint;
+        this.fx = fx;
+
+        this.sourceRect = sourceRect;
+        destRect = new Rectangle(position.x(), position.y(), sourceRect.width() * scale, sourceRect.height() * scale);
+    }
+
+    @Override
+    public void Update() {
+        action = false; // Check button state
+        if (CheckCollisionPointRec(GetMousePosition(), destRect)) {
+            System.out.println("collided");
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+                state = 2;
+                tint = BLACK;
+            } else {
+                state = 1;
+                tint = GRAY;
+            }
+
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                action = true;
+            }
+        } else {
+            state = 0;
+            tint = WHITE;
+        }
+
+        if (action) {
+            PlaySound(fx);
+        }
+    }
+
+    @Override
+    public void Render() {
+        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
+    }
+
+    @Override
+    public void Unload() {
+        UnloadTexture(texture);
+    }
+
 }
