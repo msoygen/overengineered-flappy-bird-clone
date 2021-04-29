@@ -64,7 +64,7 @@ public class App {
         }
 
         for (int i = 0; i < 4; i++) {
-            floorList.add(new Floor(LoadTexture("Resources/floor.png"), new Vector2(floorTexture.width() * i - 2, screenHeight - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE));
+            floorList.add(new Floor(LoadTexture("Resources/floor.png"), new Vector2(floorTexture.width() * i, screenHeight - floorTexture.height()), 0f, 3.0f, 1.32f, WHITE));
         }
 
         Button playButton = new Button(startButtonTexture, new Vector2(screenWidth / 2 - startButtonTexture.width() / 2, screenHeight / 2 - startButtonTexture.height() / 2), 0f, 1.0f, WHITE, fxButton);
@@ -177,6 +177,7 @@ public class App {
             //----------------------------------------------------------------------------------
         }
 
+        // De-Initialization
         backgroundList.forEach(b -> {
             b.Unload();
         });
@@ -195,7 +196,6 @@ public class App {
         player.Unload();
 
         playButton.Unload();
-        // De-Initialization
         //--------------------------------------------------------------------------------------
         CloseWindow();        // Close window and OpenGL context
         //--------------------------------------------------------------------------------------
@@ -203,14 +203,14 @@ public class App {
     }
 }
 
-abstract class GameObject {
+abstract class AbstractGameObject {
 
-    float scale;
-    float rotation;
-    Color tint;
-    Texture2D texture;
-    Rectangle sourceRect;
-    Rectangle destRect;
+    public float scale;
+    public float rotation;
+    public Color tint;
+    public Texture2D texture;
+    public Rectangle sourceRect;
+    public Rectangle destRect;
 
     public abstract void Update();
 
@@ -219,7 +219,7 @@ abstract class GameObject {
     public abstract void Unload();
 }
 
-class Pipe extends GameObject {
+class Pipe extends AbstractGameObject {
 
     float speed;
 
@@ -267,7 +267,7 @@ class Pipe extends GameObject {
     }
 }
 
-class Background extends GameObject {
+class Background extends AbstractGameObject {
 
     float speed;
     Vector2 originalPosition;
@@ -308,16 +308,14 @@ class Background extends GameObject {
     }
 }
 
-class Player extends GameObject {
+class Player extends AbstractGameObject {
 
     float speed;
     int frameCounter;
     int frameSpeed;
     int currentSprite;
     List<Texture2D> spriteList;
-    Rectangle sourceRect;
-    Rectangle destRect;
-    boolean controllable;
+    public boolean controllable;
 
     public Player(List<Texture2D> spriteList, Vector2 position, float rotation, float speed, int frameSpeed, float scale, Color tint) {
         this.spriteList = spriteList;
@@ -376,7 +374,7 @@ class Player extends GameObject {
     }
 }
 
-class Floor extends GameObject {
+class Floor extends AbstractGameObject {
 
     float speed;
     Vector2 originalPosition;
@@ -418,10 +416,10 @@ class Floor extends GameObject {
 
 }
 
-class Button extends GameObject {
+class Button extends AbstractGameObject {
 
-    int state = 0; // 0 - normal, 1 - mouse over, 2 - pressed
-    boolean action = false;
+    public int state = 0; // 0 - normal, 1 - mouse over, 2 - pressed
+    public boolean action = false;
     Sound fx;
 
     public Button(Texture2D texture, Vector2 position, float rotation, float scale, Color tint, Sound fx) {
