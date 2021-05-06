@@ -3,6 +3,15 @@ package com.msoygen.flappybirdclone;
 import static com.msoygen.flappybirdclone.App.screenWidth;
 import com.raylib.Raylib;
 import static extensions.JaylibX.*;
+import gameobject.ConcreteGameObjectFactory;
+import gameobject.GameObject;
+import gameobject.Pipe;
+import gameobject.Player;
+import gameobject.ui.Button;
+import gameobject.ui.GameOverStateUIFactory;
+import gameobject.ui.MenuStateUIFactory;
+import gameobject.ui.PlayingStateUIFactory;
+import gameobject.ui.UIImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,11 +29,21 @@ public class App {
 
     // Initialization
     //--------------------------------------------------------------------------------------
-    static final int screenWidth = 800;
-    static final int screenHeight = 600;
+    public static final int screenWidth = 800;
+    public static final int screenHeight = 600;
+
+    public static int score = 0;
 
     public static void main(String args[]) {
+        MenuStateUIFactory menuStateUIFactory = new MenuStateUIFactory();
+        PlayingStateUIFactory playingStateUIFactory = new PlayingStateUIFactory();
+        GameOverStateUIFactory gameOverStateUIFactory = new GameOverStateUIFactory();
+        
+        ConcreteGameObjectFactory gameObjectFactory = new ConcreteGameObjectFactory();
+
         GameStates gameState = GameStates.MENU;
+        boolean pipeCheck = false;
+        int pipeCount = 1;
 
         InitWindow(screenWidth, screenHeight, "flappy bird clone");
         InitAudioDevice();
@@ -33,41 +52,62 @@ public class App {
         //--------------------------------------------------------------------------------------
 
         Sound fxButton = LoadSound("Resources/buttonClick.wav");
-        Texture2D startButtonTexture = LoadTexture("Resources/startButton.png");
+        Sound fxScore = LoadSound("Resources/score.wav");
+        Sound fxCoin = LoadSound("Resources/coin.wav");
+        Sound fxGameOver = LoadSound("Resources/gameOver.wav");
+
+        Texture2D playButtonTexture = LoadTexture("Resources/playButton.png");
+        Texture2D leaderboardButtonTexture = LoadTexture("Resources/leaderboardButton.png");
+        Texture2D titleImageTexture = LoadTexture("Resources/title.png");
+        Texture2D tapImageTexture = LoadTexture("Resources/tap.png");
+
+        Texture2D scoreCanvasTexture = LoadTexture("Resources/scoreCanvas.png");
+        Texture2D gameOverTexture = LoadTexture("Resources/gameOver.png");
+        Texture2D okButtonTexture = LoadTexture("Resources/okButton.png");
+        Texture2D menuButtonTexture = LoadTexture("Resources/menuButton.png");
+        
         Texture2D backgroundTexture = LoadTexture("Resources/background.png");
         Texture2D pipeTopTexture = LoadTexture("Resources/pipeTop.png");
         Texture2D pipeBottomTexture = LoadTexture("Resources/pipeBottom.png");
         Texture2D floorTexture = LoadTexture("Resources/floor.png");
 
-        List<Pipe> pipeBottomList = new ArrayList<>();
-        List<Pipe> pipeTopList = new ArrayList<>();
-        List<Background> backgroundList = new ArrayList<>();
-        List<Floor> floorList = new ArrayList<>();
+        List<GameObject> pipeBottomList = new ArrayList<>();
+        List<GameObject> pipeTopList = new ArrayList<>();
+        List<GameObject> backgroundList = new ArrayList<>();
+        List<GameObject> floorList = new ArrayList<>();
 
-        List<Texture2D> playerSprites = new ArrayList<>();
-
-        playerSprites.add(LoadTexture("Resources/bird1.png"));
-        playerSprites.add(LoadTexture("Resources/bird2.png"));
-
-        Player player = new Player(playerSprites, new Vector2(100, screenHeight / 2 - 200), 0f, 5, 2, 0.1f, WHITE);
+        GameObject player = gameObjectFactory.createPlayer(new Vector2(100, screenHeight / 2 - 150), 0f, 5, 0.1f, WHITE);
 
         Rectangle sourceRect = new Rectangle(0, 0, pipeBottomTexture.width(), pipeBottomTexture.height() / 2);
         for (int i = 0; i < 5; i++) {
-            pipeBottomList.add(new Pipe(pipeBottomTexture, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottomTexture.height() / 2) - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE, sourceRect));
+            pipeBottomList.add(gameObjectFactory.createPipe(pipeBottomTexture, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottomTexture.height() / 2) - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE, sourceRect));
         }
         for (int i = 0; i < 5; i++) {
-            pipeTopList.add(new Pipe(pipeTopTexture, new Vector2((screenWidth / 5) * i, -(pipeTopTexture.height() / 2)), 0f, 3.0f, 1.0f, WHITE));
+            pipeTopList.add(gameObjectFactory.createPipe(pipeTopTexture, new Vector2((screenWidth / 5) * i, -(pipeTopTexture.height() / 2)), 0f, 3.0f, 1.0f, WHITE));
+        }
+
+        GameObject coin = gameObjectFactory.createCoin(new Vector2(80, 10), 0f, 3.0f, 1.0f, WHITE);
+
+        for (int i = 0; i < 4; i++) {
+            backgroundList.add(gameObjectFactory.createBackground(backgroundTexture, new Vector2(i * backgroundTexture.width(), 0), 0f, 3.0f, 1.2f, WHITE));
         }
 
         for (int i = 0; i < 4; i++) {
-            backgroundList.add(new Background(backgroundTexture, new Vector2(i * backgroundTexture.width(), 0), 0f, 3.0f, 1.2f, WHITE));
+            floorList.add(gameObjectFactory.createFloor(LoadTexture("Resources/floor.png"), new Vector2(floorTexture.width() * i, screenHeight - floorTexture.height()), 0f, 3.0f, 1.32f, WHITE));
         }
 
-        for (int i = 0; i < 4; i++) {
-            floorList.add(new Floor(LoadTexture("Resources/floor.png"), new Vector2(floorTexture.width() * i, screenHeight - floorTexture.height()), 0f, 3.0f, 1.32f, WHITE));
-        }
+        Button playButton = menuStateUIFactory.createButton(playButtonTexture, new Vector2(90, 450), 0f, 1.3f, WHITE, fxButton);
+        Button leaderboardButton = menuStateUIFactory.createButton(leaderboardButtonTexture, new Vector2(530, 450), 0f, 1.3f, WHITE, fxButton);
+        UIImage titleImage = menuStateUIFactory.createUIImage(titleImageTexture, new Vector2(122.45f, 80), 0f, 1.3f, WHITE);
+        UIImage tapImage = menuStateUIFactory.createUIImage(tapImageTexture, new Vector2(screenWidth / 2 - (tapImageTexture.width() * 2) / 2, playButton.getDestRect().y() - (tapImageTexture.height() * 2)), 0f, 2.0f, WHITE);
+        UIImage upArrowIcon = menuStateUIFactory.createUpArrowIconAnimated(new Vector2(screenWidth / 2 - 3, tapImage.getDestRect().y() - 3), 0f, 1.0f, WHITE);
 
-        Button playButton = new Button(startButtonTexture, new Vector2(screenWidth / 2 - startButtonTexture.width() / 2, screenHeight / 2 - startButtonTexture.height() / 2), 0f, 1.0f, WHITE, fxButton);
+        UIImage inGameUIScore = playingStateUIFactory.createInGameUIScore(new Vector2(5, 5), 0f, 1.5f, WHITE);
+
+        UIImage gameOverImage = gameOverStateUIFactory.createUIImage(gameOverTexture, new Vector2(290, 100), 0f, 1.0f, WHITE);
+        UIImage scoreCanvas = gameOverStateUIFactory.createScoreCanvas(new Vector2(screenWidth / 2 - (scoreCanvasTexture.width() * 2.0f) / 2, screenHeight / 2 - (scoreCanvasTexture.height() * 2.0f) / 2), 0f, 2.0f, WHITE, score);
+        Button menuButton = gameOverStateUIFactory.createButton(menuButtonTexture, new Vector2(screenWidth / 2 - menuButtonTexture.width() - 100, scoreCanvas.getDestRect().y() + scoreCanvas.getDestRect().height()), 0f, 2.0f, WHITE, fxButton);
+        Button okButton = gameOverStateUIFactory.createButton(okButtonTexture, new Vector2(screenWidth / 2 - okButtonTexture.width() + 100, scoreCanvas.getDestRect().y() + scoreCanvas.getDestRect().height()), 0f, 2.0f, WHITE, fxButton);
 
         // Main game loop
         while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -76,10 +116,15 @@ public class App {
             switch (gameState) {
                 case MENU:
                     playButton.Update();
-                    if (playButton.action == true) {
+                    leaderboardButton.Update();
+                    if (playButton.getAction() == true) {
                         gameState = GameStates.PLAYING;
-                        playButton.action = false;
+                        playButton.setAction(false);
                     }
+                    leaderboardButton.Update();
+                    titleImage.Update();
+                    tapImage.Update();
+                    upArrowIcon.Update();
                     break;
                 case PLAYING:
                     backgroundList.forEach(b -> {
@@ -95,29 +140,85 @@ public class App {
                         p.Update();
                     });
                     player.Update();
-                    for (Pipe p : pipeBottomList) {
-                        if (player.destRect.x() + player.destRect.width() / 2 - 10 > p.destRect.x()
-                                && player.destRect.x() + player.destRect.width() / 2 - 10 < p.destRect.x() + p.destRect.width()
-                                && player.destRect.y() + player.destRect.height() / 2 - 10 > p.destRect.y()) {
+                    for (GameObject p : pipeBottomList) {
+                        if (player.getDestRect().x() + player.getDestRect().width() / 2 - 10 > p.getDestRect().x()
+                                && player.getDestRect().x() + player.getDestRect().width() / 2 - 10 < p.getDestRect().x() + p.getDestRect().width()
+                                && player.getDestRect().y() + player.getDestRect().height() / 2 - 10 > p.getDestRect().y()) {
                             gameState = GameStates.GAME_OVER;
+                            PlaySound(fxGameOver);
                         }
                     }
-                    for (Pipe p : pipeTopList) {
-                        if (player.destRect.x() + player.destRect.width() / 2 - 10 > p.destRect.x()
-                                && player.destRect.x() < p.destRect.x() + p.destRect.width()
-                                && player.destRect.y() - player.destRect.height() / 2 + 5 < p.destRect.y() + p.destRect.height()) {
+                    for (GameObject p : pipeTopList) {
+                        if (player.getDestRect().x() + player.getDestRect().width() / 2 - 10 > p.getDestRect().x()
+                                && player.getDestRect().x() < p.getDestRect().x() + p.getDestRect().width()
+                                && player.getDestRect().y() - player.getDestRect().height() / 2 + 5 < p.getDestRect().y() + p.getDestRect().height()) {
                             gameState = GameStates.GAME_OVER;
+                            PlaySound(fxGameOver);
                         }
                     }
+                    if (player.getDestRect().x() + player.getDestRect().width() / 2 > pipeBottomList.get(pipeCount).getDestRect().x() + pipeBottomList.get(pipeCount).getDestRect().width()) {
+                        pipeCheck = true;
+                        pipeCount++;
+                        if (pipeCount >= pipeBottomList.size()) {
+                            pipeCount = 0;
+                        }
+                        PlaySound(fxScore);
+                    } else {
+                        if (pipeCheck) {
+                            score += 1;
+                        }
+                        pipeCheck = false;
+                    }
+
+                    if (player.getDestRect().x() + player.getDestRect().width() / 2 - 10 > coin.getDestRect().x()
+                            && player.getDestRect().x() < coin.getDestRect().x() + coin.getDestRect().width()
+                            && player.getDestRect().y() - player.getDestRect().height() / 2 + 5 < coin.getDestRect().y() + coin.getDestRect().height()) {
+                        PlaySound(fxCoin);
+                    }
+
+                    coin.Update();
+                    inGameUIScore.Update();
                     break;
                 case GAME_OVER:
-                    playButton.Update();
-                    if (playButton.action == true) {
-                        player.destRect.x(100);
-                        player.destRect.y(screenHeight / 2 - 100);
+                    gameOverImage.Update();
+                    scoreCanvas.Update();
+                    okButton.Update();
+                    menuButton.Update();
+                    if (menuButton.getAction() == true) {
+                        player.getDestRect().x(100);
+                        player.getDestRect().y(screenHeight / 2 - 100);
 
                         gameState = GameStates.MENU;
-                        playButton.action = false;
+                        menuButton.setAction(false);
+
+                        player = new Player(new Vector2(100, screenHeight / 2 - 100), 0f, 5, 0.1f, WHITE);
+                        score = 0;
+
+                        sourceRect = new Rectangle(0, 0, pipeBottomTexture.width(), pipeBottomTexture.height() / 2);
+                        for (int i = 0; i < 5; i++) {
+                            pipeBottomList.set(i, new Pipe(pipeBottomTexture, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottomTexture.height() / 2) - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE, sourceRect));
+                        }
+                        for (int i = 0; i < 5; i++) {
+                            pipeTopList.set(i, new Pipe(pipeTopTexture, new Vector2((screenWidth / 5) * i, -(pipeTopTexture.height() / 2)), 0f, 3.0f, 1.0f, WHITE));
+                        }
+                    }
+                    if (okButton.getAction() == true) {
+                        player.getDestRect().x(100);
+                        player.getDestRect().y(screenHeight / 2 - 100);
+
+                        gameState = GameStates.PLAYING;
+                        okButton.setAction(false);
+
+                        player = new Player(new Vector2(100, screenHeight / 2 - 100), 0f, 5, 0.1f, WHITE);
+                        score = 0;
+                        
+                        sourceRect = new Rectangle(0, 0, pipeBottomTexture.width(), pipeBottomTexture.height() / 2);
+                        for (int i = 0; i < 5; i++) {
+                            pipeBottomList.set(i, new Pipe(pipeBottomTexture, new Vector2((screenWidth / 5) * i, screenHeight - (pipeBottomTexture.height() / 2) - floorTexture.height()), 0f, 3.0f, 1.0f, WHITE, sourceRect));
+                        }
+                        for (int i = 0; i < 5; i++) {
+                            pipeTopList.set(i, new Pipe(pipeTopTexture, new Vector2((screenWidth / 5) * i, -(pipeTopTexture.height() / 2)), 0f, 3.0f, 1.0f, WHITE));
+                        }
                     }
                     break;
                 default:
@@ -138,6 +239,11 @@ public class App {
                         f.Render();
                     });
                     playButton.Render();
+                    leaderboardButton.Render();
+                    titleImage.Render();
+                    tapImage.Render();
+                    player.Render();
+                    upArrowIcon.Render();
                     break;
                 case PLAYING:
                     backgroundList.forEach(b -> {
@@ -152,7 +258,9 @@ public class App {
                     pipeTopList.forEach(p -> {
                         p.Render();
                     });
+                    coin.Render();
                     player.Render();
+                    inGameUIScore.Render();
                     break;
                 case GAME_OVER:
                     backgroundList.forEach(b -> {
@@ -161,7 +269,6 @@ public class App {
                     floorList.forEach(f -> {
                         f.Render();
                     });
-                    playButton.Render();
                     pipeBottomList.forEach(p -> {
                         p.Render();
                     });
@@ -169,6 +276,10 @@ public class App {
                         p.Render();
                     });
                     player.Render();
+                    gameOverImage.Render();
+                    scoreCanvas.Render();
+                    okButton.Render();
+                    menuButton.Render();
                     break;
                 default:
                     break;
@@ -193,294 +304,21 @@ public class App {
             p.Unload();
         });
 
+        coin.Unload();
         player.Unload();
-
         playButton.Unload();
+        leaderboardButton.Unload();
+        titleImage.Unload();
+        tapImage.Unload();
+        upArrowIcon.Unload();
+        inGameUIScore.Unload();
+        gameOverImage.Unload();
+        scoreCanvas.Unload();
+        okButton.Unload();
+        menuButton.Unload();
         //--------------------------------------------------------------------------------------
         CloseWindow();        // Close window and OpenGL context
         //--------------------------------------------------------------------------------------
 
     }
-}
-
-abstract class AbstractGameObject {
-
-    public float scale;
-    public float rotation;
-    public Color tint;
-    public Texture2D texture;
-    public Rectangle sourceRect;
-    public Rectangle destRect;
-
-    public abstract void Update();
-
-    public abstract void Render();
-
-    public abstract void Unload();
-}
-
-class Pipe extends AbstractGameObject {
-
-    float speed;
-
-    public Pipe(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint) {
-        this.texture = texture;
-        this.rotation = rotation;
-        this.speed = speed;
-        this.scale = scale;
-        this.tint = tint;
-
-        float width = texture.width();
-        float height = texture.height();
-
-        sourceRect = new Rectangle(0, 0, width, height);
-        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
-    }
-
-    public Pipe(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint, Rectangle sourceRect) {
-        this.texture = texture;
-        this.rotation = rotation;
-        this.speed = speed;
-        this.scale = scale;
-        this.tint = tint;
-
-        this.sourceRect = sourceRect;
-        destRect = new Rectangle(position.x(), position.y(), sourceRect.width() * scale, sourceRect.height() * scale);
-    }
-
-    @Override
-    public void Update() {
-        destRect.x(destRect.x() - speed);
-        if (destRect.x() + texture.width() <= 0) {
-            destRect.x(screenWidth);
-        }
-    }
-
-    @Override
-    public void Render() {
-        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
-    }
-
-    @Override
-    public void Unload() {
-        UnloadTexture(texture);
-    }
-}
-
-class Background extends AbstractGameObject {
-
-    float speed;
-    Vector2 originalPosition;
-
-    public Background(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint) {
-        this.rotation = rotation;
-        this.texture = texture;
-        this.speed = speed;
-        this.scale = scale;
-        this.tint = tint;
-
-        this.originalPosition = new Vector2(position.x(), position.y());
-
-        float width = texture.width();
-        float height = texture.height();
-
-        sourceRect = new Rectangle(0, 0, width, height);
-        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
-    }
-
-    @Override
-    public void Update() {
-        destRect.x(destRect.x() - speed);
-        if (destRect.x() - originalPosition.x() <= -texture.width()) {
-            destRect.x(originalPosition.x());
-            destRect.y(originalPosition.y());
-        }
-    }
-
-    @Override
-    public void Render() {
-        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
-    }
-
-    @Override
-    public void Unload() {
-        UnloadTexture(texture);
-    }
-}
-
-class Player extends AbstractGameObject {
-
-    float speed;
-    int frameCounter;
-    int frameSpeed;
-    int currentSprite;
-    List<Texture2D> spriteList;
-    public boolean controllable;
-
-    public Player(List<Texture2D> spriteList, Vector2 position, float rotation, float speed, int frameSpeed, float scale, Color tint) {
-        this.spriteList = spriteList;
-        this.rotation = rotation;
-        this.speed = speed;
-        this.scale = scale;
-        this.tint = tint;
-
-        frameCounter = 0;
-        this.frameSpeed = frameSpeed;
-        currentSprite = 0;
-
-        float width = spriteList.get(currentSprite).width();
-        float height = spriteList.get(currentSprite).height();
-
-        sourceRect = new Rectangle(0, 0, width, height);
-        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
-
-        controllable = true;
-    }
-
-    @Override
-    public void Update() {
-        if (controllable) {
-            frameCounter++;
-            if (frameCounter >= (60 / frameSpeed)) {
-                frameCounter = 0;
-                currentSprite++;
-
-                if (currentSprite == spriteList.size()) {
-                    currentSprite = 0;
-                }
-            }
-            if (IsKeyDown(KEY_SPACE)) {
-                destRect.y(destRect.y() - speed);
-
-                rotation = 330.0f;
-            } else {
-                destRect.y(destRect.y() + speed);
-
-                rotation = 30.0f;
-            }
-        }
-    }
-
-    @Override
-    public void Render() {
-        DrawTexturePro(spriteList.get(currentSprite), sourceRect, destRect, new Vector2(destRect.width() / 2, destRect.height() / 2), rotation, tint);
-    }
-
-    @Override
-    public void Unload() {
-        spriteList.forEach(t -> {
-            UnloadTexture(t);
-        });
-    }
-}
-
-class Floor extends AbstractGameObject {
-
-    float speed;
-    Vector2 originalPosition;
-
-    public Floor(Texture2D texture, Vector2 position, float rotation, float speed, float scale, Color tint) {
-        this.texture = texture;
-        this.rotation = rotation;
-        this.speed = speed;
-        this.scale = scale;
-        this.tint = tint;
-
-        this.originalPosition = new Vector2(position.x(), position.y());
-
-        float width = texture.width();
-        float height = texture.height();
-
-        sourceRect = new Rectangle(0, 0, width, height);
-        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
-    }
-
-    @Override
-    public void Update() {
-        destRect.x(destRect.x() - speed);
-        if (destRect.x() - originalPosition.x() <= -texture.width()) {
-            destRect.x(originalPosition.x());
-            destRect.y(originalPosition.y());
-        }
-    }
-
-    @Override
-    public void Render() {
-        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
-    }
-
-    @Override
-    public void Unload() {
-        UnloadTexture(texture);
-    }
-
-}
-
-class Button extends AbstractGameObject {
-
-    public int state = 0; // 0 - normal, 1 - mouse over, 2 - pressed
-    public boolean action = false;
-    Sound fx;
-
-    public Button(Texture2D texture, Vector2 position, float rotation, float scale, Color tint, Sound fx) {
-        this.texture = texture;
-        this.rotation = rotation;
-        this.scale = scale;
-        this.tint = tint;
-        this.fx = fx;
-
-        float width = texture.width();
-        float height = texture.height();
-
-        sourceRect = new Rectangle(0, 0, width, height);
-        destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
-    }
-
-    public Button(Texture2D texture, Vector2 position, float rotation, float scale, Color tint, Sound fx, Rectangle sourceRect) {
-        this.texture = texture;
-        this.rotation = rotation;
-        this.scale = scale;
-        this.tint = tint;
-        this.fx = fx;
-
-        this.sourceRect = sourceRect;
-        destRect = new Rectangle(position.x(), position.y(), sourceRect.width() * scale, sourceRect.height() * scale);
-    }
-
-    @Override
-    public void Update() {
-        action = false; // Check button state
-        if (CheckCollisionPointRec(GetMousePosition(), destRect)) {
-            System.out.println("collided");
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-                state = 2;
-                tint = BLACK;
-            } else {
-                state = 1;
-                tint = GRAY;
-            }
-
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-                action = true;
-            }
-        } else {
-            state = 0;
-            tint = WHITE;
-        }
-
-        if (action) {
-            PlaySound(fx);
-        }
-    }
-
-    @Override
-    public void Render() {
-        DrawTexturePro(texture, sourceRect, destRect, new Vector2(0, 0), rotation, tint);
-    }
-
-    @Override
-    public void Unload() {
-        UnloadTexture(texture);
-    }
-
 }
