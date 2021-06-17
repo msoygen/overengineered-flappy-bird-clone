@@ -5,7 +5,7 @@
  */
 package gameobject;
 
-import static com.msoygen.flappybirdclone.App.screenWidth;
+import static com.msoygen.flappybirdclone.Game.screenWidth;
 import com.raylib.Raylib;
 import static extensions.JaylibX.*;
 

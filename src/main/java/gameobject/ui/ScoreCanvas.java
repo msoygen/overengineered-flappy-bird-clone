@@ -26,22 +26,22 @@ public class ScoreCanvas implements UIImage {
     private int score;
     private int bestScore;
 
-    Texture2D scoreZeroTexture = LoadTexture("Resources/0.png");
-    Texture2D scoreOneTexture = LoadTexture("Resources/1.png");
-    Texture2D scoreTwoTexture = LoadTexture("Resources/2.png");
-    Texture2D scoreThreeTexture = LoadTexture("Resources/3.png");
-    Texture2D scoreFourTexture = LoadTexture("Resources/4.png");
-    Texture2D scoreFiveTexture = LoadTexture("Resources/5.png");
-    Texture2D scoreSixTexture = LoadTexture("Resources/6.png");
-    Texture2D scoreSevenTexture = LoadTexture("Resources/7.png");
-    Texture2D scoreEightTexture = LoadTexture("Resources/8.png");
-    Texture2D scoreNineTexture = LoadTexture("Resources/9.png");
+    private Texture2D scoreZeroTexture = LoadTexture("Resources/0.png");
+    private Texture2D scoreOneTexture = LoadTexture("Resources/1.png");
+    private Texture2D scoreTwoTexture = LoadTexture("Resources/2.png");
+    private Texture2D scoreThreeTexture = LoadTexture("Resources/3.png");
+    private Texture2D scoreFourTexture = LoadTexture("Resources/4.png");
+    private Texture2D scoreFiveTexture = LoadTexture("Resources/5.png");
+    private Texture2D scoreSixTexture = LoadTexture("Resources/6.png");
+    private Texture2D scoreSevenTexture = LoadTexture("Resources/7.png");
+    private Texture2D scoreEightTexture = LoadTexture("Resources/8.png");
+    private Texture2D scoreNineTexture = LoadTexture("Resources/9.png");
 
-    List<Texture2D> scoreTextures = new ArrayList<>();
+    private List<Texture2D> scoreTextures = new ArrayList<>();
 
-    Texture2D texture = LoadTexture("Resources/scoreCanvas.png");
-    Texture2D bronzeMedalTexture = LoadTexture("Resources/bronzeMedal.png");
-    Texture2D goldMedalTexture = LoadTexture("Resources/goldMedal.png");
+    private Texture2D texture = LoadTexture("Resources/scoreCanvas.png");
+    private Texture2D silverMedalTexture = LoadTexture("Resources/silverMedal.png");
+    private Texture2D goldMedalTexture = LoadTexture("Resources/goldMedal.png");
 
     private Rectangle medalSourceRect;
     private Rectangle medalDestRect;
@@ -57,23 +57,14 @@ public class ScoreCanvas implements UIImage {
     public ScoreCanvas(Vector2 position, float rotation, float scale, Color tint, int score) {
 
         scoreTextures.add(scoreZeroTexture);
-
         scoreTextures.add(scoreOneTexture);
-
         scoreTextures.add(scoreTwoTexture);
-
         scoreTextures.add(scoreThreeTexture);
-
         scoreTextures.add(scoreFourTexture);
-
         scoreTextures.add(scoreFiveTexture);
-
         scoreTextures.add(scoreSixTexture);
-
         scoreTextures.add(scoreSevenTexture);
-
         scoreTextures.add(scoreEightTexture);
-
         scoreTextures.add(scoreNineTexture);
 
         this.rotation = rotation;
@@ -89,7 +80,7 @@ public class ScoreCanvas implements UIImage {
         sourceRect = new Rectangle(0, 0, width, height);
         destRect = new Rectangle(position.x(), position.y(), width * scale, height * scale);
 
-        medalSourceRect = new Rectangle(0, 0, bronzeMedalTexture.width(), bronzeMedalTexture.height());
+        medalSourceRect = new Rectangle(0, 0, silverMedalTexture.width(), silverMedalTexture.height());
         medalDestRect = new Rectangle(destRect.x() + 100, destRect.y() + 100, medalSourceRect.width() * scale, medalSourceRect.height() * scale);
 
         scoreSourceRect = new Rectangle(0, 0, scoreTextures.get(0).width(), scoreTextures.get(0).height());
@@ -100,7 +91,7 @@ public class ScoreCanvas implements UIImage {
         bestScoreDestRect = new Rectangle(destRect.x() + destRect.width() - 130, destRect.y() + 160, scoreSourceRect.width() * scale, scoreSourceRect.height() * scale);
         originalBestScorePosition = new Vector2(bestScoreDestRect.x(), bestScoreDestRect.y());
 
-        bestScore = 11; // TO-DO fetch from database
+        bestScore = 5; // TO-DO fetch from database
     }
 
     @Override
@@ -115,7 +106,7 @@ public class ScoreCanvas implements UIImage {
         if (score >= bestScore) {
             DrawTexturePro(goldMedalTexture, medalSourceRect, medalDestRect, new Vector2(0, 0), rotation, tint);
         } else {
-            DrawTexturePro(bronzeMedalTexture, medalSourceRect, medalDestRect, new Vector2(0, 0), rotation, tint);
+            DrawTexturePro(silverMedalTexture, medalSourceRect, medalDestRect, new Vector2(0, 0), rotation, tint);
         }
 
         for (int i = 0; i < scoreIntTab.length; i++) {
@@ -136,7 +127,7 @@ public class ScoreCanvas implements UIImage {
     @Override
     public void Unload() {
         UnloadTexture(texture);
-        UnloadTexture(bronzeMedalTexture);
+        UnloadTexture(silverMedalTexture);
         UnloadTexture(goldMedalTexture);
     }
 

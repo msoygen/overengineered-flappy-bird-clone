@@ -6,7 +6,6 @@
 package gameobject.ui;
 
 
-import static com.msoygen.flappybirdclone.App.screenWidth;
 import com.raylib.Raylib;
 import static extensions.JaylibX.*;
 import gameobject.GameObject;

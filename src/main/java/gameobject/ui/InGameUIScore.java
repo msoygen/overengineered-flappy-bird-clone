@@ -5,9 +5,7 @@
  */
 package gameobject.ui;
 
-import static com.msoygen.flappybirdclone.App.score;
-
-import static com.msoygen.flappybirdclone.App.screenWidth;
+import static com.msoygen.flappybirdclone.Game.score;
 import com.raylib.Raylib;
 import static extensions.JaylibX.*;
 import java.util.ArrayList;
