@@ -1,4 +1,4 @@
-# overengineered-flappy-bird-clone
+# Overengineered Flappy Bird Clone
 3rd year 2nd term object oriented software engineering course project
 
 ### Wait, I can explain!
